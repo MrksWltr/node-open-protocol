@@ -1072,10 +1072,31 @@ class SessionControlClient extends EventEmitter {
             this.emit("__SubscribeData__", obj);
 
             if (!this.useLinkLayer) {
-                this.ll.write({
-                    mid: midGroupList[dataGroup].ack,
-                    isAck: true
-                });
+                if (midGroupList[dataGroup].ackpayload === undefined) {
+                    this.ll.write({
+                        mid: midGroupList[dataGroup].ack,
+                        isAck: true
+                    });
+                } else {
+                    //special check for MID106/107
+                    if (receivedMid === 106 ||
+                        receivedMid === 107) {
+                        // only send request (108) when messageNumber < totalNoOfMessages
+                        if (data.payload.messageNumber < data.payload.totalNoOfMessages) {
+                            this.ll.write({
+                                mid: midGroupList[dataGroup].ack,
+                                isAck: true,
+                                payload: midGroupList[dataGroup].ackpayload
+                            });
+                        }
+                    } else {
+                        this.ll.write({
+                            mid: midGroupList[dataGroup].ack,
+                            isAck: true,
+                            payload: midGroupList[dataGroup].ackpayload
+                        });
+                    }
+                }
                 return;
             }
         }
